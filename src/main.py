@@ -1,40 +1,42 @@
-# Install packages
-import os 
+import os
+import json
 import requests
+import psycopg2
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Create variables
+# --- API call (what you already have) -----------------------------
 api_key = os.getenv("API_KEY")
-
-# Used Postman to retrieve the desired location's latitude and longitude
-# https://api.openweathermap.org/geo/1.0/direct?q=San Jose, California&limit=5
-# result:
-        # "lat": 37.3361663,
-        # "lon": -121.890591,
-        # "country": "US",
-        # "state": "California"
-
-# Base URL
-base_url = "http://api.openweathermap.org/data/2.5/weather?"
-
-# # Current Weather Data Endpoint
-# curr_weather_data_endpoint = "/data/2.5/weather?"
-
-# Defining params dict for the parameters to be sent to the API
 PARAMS = {
-    'lat': '37.3361663',
-    'lon': '-121.890591',
-    'appid': api_key,
-    'mode': 'json',
-    'units': 'standard'
+    "lat": "37.3361663",
+    "lon": "-121.890591",
+    "appid": api_key,
+    "mode": "json",
+    "units": "standard",
 }
+data = requests.get("http://api.openweathermap.org/data/2.5/weather", params=PARAMS).json()
 
-# Sending get request and saving the response as response object
-r = requests.get(url = base_url, params = PARAMS)
+# --- DB connection ------------------------------------------------
+conn = psycopg2.connect(
+    host     = os.getenv("DB_HOST", "127.0.0.1"),   # use IP → TCP only
+    port     = os.getenv("DB_PORT", "5433"),
+    dbname   = os.getenv("POSTGRES_DB", "postgres"),
+    user     = os.getenv("POSTGRES_USER"),
+    password = os.getenv("POSTGRES_PASSWORD"),
+    connect_timeout = 5,            # optional: fail fast if wrong
+)
+cur = conn.cursor()
 
-# Extracting data in json format
-data = r.json()
+cur.execute(
+    """
+    INSERT INTO raw_weather (city, payload)
+    VALUES (%s, %s::jsonb)
+    """,
+    ("San Jose, CA", json.dumps(data)),
+)
 
-print(data)
+conn.commit()
+cur.close()
+conn.close()
+print("✅ Row inserted")
