@@ -120,15 +120,15 @@ def fetch_weather_bulk(
 
 
 # Manual test: `python extract.py`
-# If extraction works, we should print the single and multiple requests
-if __name__ == "__main__":
-    san_jose = (37.3361663, -121.890591)
-    nyc      = (40.7128,    -74.0060)
-    la       = (34.0522,    -118.2437)
+# • If extraction works, we should print the single and multiple requests
+# if __name__ == "__main__":
+#     san_jose = (37.3361663, -121.890591)
+#     nyc      = (40.7128,    -74.0060)
+#     la       = (34.0522,    -118.2437)
 
-    # single
-    print(fetch_weather(*san_jose)["name"])
+#     # single
+#     print(fetch_weather(*san_jose)["name"])
 
-    # bulk (threaded)
-    bulk = fetch_weather_bulk([san_jose, nyc, la], max_workers=3)
-    print([p["name"] for p in bulk])
+#     # bulk (threaded)
+#     bulk = fetch_weather_bulk([san_jose, nyc, la], max_workers=3)
+#     print([p["name"] for p in bulk])
