@@ -1,6 +1,6 @@
 import psycopg2
 import os
-from main import mock_fetch_data
+from test import mock_fetch_data
 
 def connect_to_db():
     print("Connecting to the PostgreSQL database...")
