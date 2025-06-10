@@ -1,0 +1,25 @@
+services:
+  db:
+    container_name: weather-db
+    image: postgres:17.5
+    ports:
+      - 5436:5432
+    env_file: secrets.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  pgadmin: 
+    container_name: weather-pgadmin
+    image: dpage/pgadmin4:latest
+    ports: 
+      - 5050:80 #browse to http://localhost:5050
+    depends_on: [db]
+    env_file: secrets.env
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  pgadmin_data:
