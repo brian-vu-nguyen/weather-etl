@@ -1,1 +1,0 @@
-For Docker, run the following command if you want to reset your credentials: unset POSTGRES_DB POSTGRES_PASSWORD PGADMIN_DEFAULT_EMAIL PGADMIN_DEFAULT_PASSWORD
