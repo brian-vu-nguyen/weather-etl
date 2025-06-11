@@ -11,4 +11,4 @@ venv/
 .DS_Store
 .env
 secrets.env
-docker-compose.yaml
+/docker-compose.yaml
