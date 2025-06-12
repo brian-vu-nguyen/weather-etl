@@ -1,35 +1,50 @@
-from extract import fetch_weather_bulk
-import json
-from pyspark.sql import functions as F
+# transform.py
+"""
+Transform raw weather payloads into a tidy tabular structure — pandas version
+(no Java / Spark required).
 
-def build_tidy_df(spark, coords):
+The function returns a list[dict] so it is JSON-serialisable for Airflow XCom.
+"""
+
+from __future__ import annotations
+from typing import List, Dict, Any
+from datetime import datetime, timezone
+
+import pandas as pd
+
+
+def transform_weather_data(
+    raw_payloads: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
     """
-    Run Extract + Transform inside an existing Spark session.
+    Convert a list of OpenWeather JSON payloads into a list of row-dicts.
 
     Parameters
     ----------
-    spark   : pyspark.sql.SparkSession
-    coords  : iterable[(lat, lon)]
+    raw_payloads  – List of dicts from extract_weather_data_bulk().
 
     Returns
     -------
-    pyspark.sql.DataFrame – one row per location, ready to load.
+    list[dict] — one cleaned row per city.
     """
-    raw_payloads = fetch_weather_bulk(coords)          # E
-    rdd_json = spark.sparkContext.parallelize(
-        [json.dumps(p) for p in raw_payloads]
-    )
-    weather_df = spark.read.json(rdd_json)
+    rows = []
+    now_utc = datetime.now(tz=timezone.utc)
 
-    tidy_df = (
-        weather_df.select(
-            F.col("name").alias("city"),
-            F.round(((F.col("main.temp") - 273.15) * 9/5 + 32), 2).alias("temp_f"),
-            F.col("main.humidity").alias("humidity_pct"),
-            F.col("coord.lat").alias("lat"),
-            F.col("coord.lon").alias("lon"),
-            F.col("dt").cast("timestamp").alias("obs_time_utc")
+    for p in raw_payloads:
+        rows.append(
+            {
+                "city":          p.get("name"),
+                "temp_f":        p.get("main", {}).get("temp"),
+                "humidity_pct":  p.get("main", {}).get("humidity"),
+                "lat":           p.get("coord", {}).get("lat"),
+                "lon":           p.get("coord", {}).get("lon"),
+                "obs_time_utc":  datetime.fromtimestamp(p.get("dt"), tz=timezone.utc)
+                                 if p.get("dt") else None,
+                "ingested_at":   now_utc,
+            }
         )
-        .withColumn("ingested_at", F.current_timestamp())
-    )
-    return tidy_df
+
+    # Optional sanity-check while local-testing
+    # df = pd.DataFrame(rows); print(df.head())
+
+    return rows

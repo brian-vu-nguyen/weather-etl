@@ -1,57 +1,91 @@
-import os
-from pathlib import Path
+# load.py
+"""
+Load step – write the transformed weather rows into Postgres using
+Airflow's PostgresHook (psycopg2 under the hood).
 
-from dotenv import load_dotenv        # pip install python-dotenv
-from pyspark.sql import SparkSession
-from transform import build_tidy_df
+Requirements
+------------
+* Airflow's 'postgres' provider   (already present in the standard image)
+* A Postgres connection in Admin → Connections. Example:
+      Conn Id:   weather_pg        (use the same id in `load_weather`)
+      Conn Type: Postgres
+      Host:      host.docker.internal   # or your container name / RDS endpoint
+      Schema:    weather
+      Login:     airflow
+      Password:  ****
+      Port:      5432
 
-# 0. Read secrets.env into the process environment
-env_path = Path(__file__).with_name("secrets.env")   # adjust if it lives elsewhere
-load_dotenv(dotenv_path=env_path)                    # now os.environ has the pairs
+The function is **idempotent**: it will auto-create the table if missing.
+"""
 
+from __future__ import annotations
+from typing import List, Dict, Any
+import logging
 
-# 1. Spark session
-spark = (
-    SparkSession.builder
-    .config("spark.jars.packages", "org.postgresql:postgresql:42.7.3")
-    .appName("weather_load")
-    .getOrCreate()
-)
-
-
-# 2. Re-run Transform
-coords = [
-    (37.3361663, -121.890591),   # San Jose
-    (40.7128,    -74.0060),      # New York
-    (34.0522,    -118.2437),     # Los Angeles
-] 
-df = build_tidy_df(spark, coords)
-df.show(truncate=False)
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from psycopg2.extras import execute_values
 
 
-# 3. Write to Postgres via JDBC
-PG_HOST           = "localhost"          # no fallback → raises if missing
-PG_PORT           = 5436
-POSTGRES_DB       = os.getenv("POSTGRES_DB")
-POSTGRES_USER     = os.getenv("POSTGRES_USER")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-WRITE_MODE        = os.getenv("WRITE_MODE", "append")   # optional, keep default
-TABLE             = "daily_weather"
+def _ensure_table_exists(pg_hook: PostgresHook, table: str) -> None:
+    create_sql = f"""
+    CREATE TABLE IF NOT EXISTS {table} (
+        city            TEXT,
+        temp_f          NUMERIC,
+        humidity_pct    NUMERIC,
+        lat             NUMERIC,
+        lon             NUMERIC,
+        obs_time_utc    TIMESTAMP WITH TIME ZONE,
+        ingested_at     TIMESTAMP WITH TIME ZONE
+    );
+    """
+    with pg_hook.get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(create_sql)
+        conn.commit()
 
-jdbc_url = f"jdbc:postgresql://{PG_HOST}:{PG_PORT}/{POSTGRES_DB}"
 
-(df.write
-   .mode(WRITE_MODE)
-   .jdbc(
-       url        = jdbc_url,
-       table      = TABLE,
-       properties = {
-           "user":     POSTGRES_USER,
-           "password": POSTGRES_PASSWORD,
-           "driver":   "org.postgresql.Driver",
-       },
-   )
-)
+def load_weather(
+    rows: List[Dict[str, Any]],
+    *,
+    table: str = "daily_weather",
+    pg_conn_id: str = "weather_pg",
+    batch_size: int = 500,
+) -> None:
+    """
+    Insert each dict in *rows* into *table*.
 
-print(f"\n✅ Loaded data into {POSTGRES_DB}.{TABLE} ({WRITE_MODE} mode)")
-spark.stop()
+    Parameters
+    ----------
+    rows        – list of dicts from transform_weather_data().
+    table       – Postgres table name (created if absent).
+    pg_conn_id  – Airflow Postgres connection id.
+    batch_size  – how many rows per execute_values() call.
+    """
+    if not rows:
+        logging.warning("load_weather: received 0 rows – nothing to write.")
+        return
+
+    pg_hook = PostgresHook(postgres_conn_id=pg_conn_id)
+    _ensure_table_exists(pg_hook, table)
+
+    fields = [
+        "city",
+        "temp_f",
+        "humidity_pct",
+        "lat",
+        "lon",
+        "obs_time_utc",
+        "ingested_at",
+    ]
+
+    values = [[r.get(f) for f in fields] for r in rows]
+
+    insert_sql = f"INSERT INTO {table} ({', '.join(fields)}) VALUES %s"
+
+    with pg_hook.get_conn() as conn:
+        with conn.cursor() as cur:
+            for i in range(0, len(values), batch_size):
+                execute_values(cur, insert_sql, values[i : i + batch_size])
+        conn.commit()
+
+    logging.info("%s rows written to %s via %s", len(rows), table, pg_conn_id)
