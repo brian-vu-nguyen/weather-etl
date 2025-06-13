@@ -12,7 +12,6 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-
 def transform_weather_data(
     raw_payloads: List[Dict[str, Any]],
 ) -> List[Dict[str, Any]]:

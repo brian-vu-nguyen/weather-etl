@@ -15,9 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from dotenv import load_dotenv
 
-# ---------------------------------------------------------------------------#
 # Globals
-# ---------------------------------------------------------------------------#
 load_dotenv()                                 # still allows .env for local runs
 BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 _ENV_API_KEY = os.getenv("API_KEY")           # fallback only
@@ -25,9 +23,7 @@ _ENV_API_KEY = os.getenv("API_KEY")           # fallback only
 class WeatherAPIError(RuntimeError):
     """Wrap network / API errors so callers can handle them cleanly."""
 
-# ---------------------------------------------------------------------------#
 # Single request
-# ---------------------------------------------------------------------------#
 def extract_weather_data(
     lat: float,
     lon: float,
@@ -67,9 +63,7 @@ def extract_weather_data(
             f"Request for lat={lat}, lon={lon} failed: {exc}"
         ) from exc
 
-# ---------------------------------------------------------------------------#
 # Bulk requests
-# ---------------------------------------------------------------------------#
 def extract_weather_data_bulk(
     coords: Iterable[Tuple[float, float]],
     *,

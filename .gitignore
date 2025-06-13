@@ -11,3 +11,4 @@ venv/
 .DS_Store
 secrets.env
 /docker-compose.yaml
+config/airflow.cfg

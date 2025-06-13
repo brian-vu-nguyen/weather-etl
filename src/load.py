@@ -89,3 +89,4 @@ def load_weather(
         conn.commit()
 
     logging.info("%s rows written to %s via %s", len(rows), table, pg_conn_id)
+    
