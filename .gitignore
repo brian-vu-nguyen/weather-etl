@@ -9,6 +9,5 @@ __pycache__/
 venv/
 .ipynb_checkpoints/
 .DS_Store
-.env
 secrets.env
 /docker-compose.yaml
