@@ -11,15 +11,14 @@ from extract import extract_weather_data_bulk
 from transform import transform_weather_data
 from load import load_weather                             
 
-# ---------------------------------------------------------------------------#
 # DAG-level settings
-# ---------------------------------------------------------------------------#
 default_args = {
     "owner": "airflow",
     "retries": 2,
     "retry_delay": timedelta(minutes=5),
 }
 
+# Enter desired coordinate(s)
 coords: List[Tuple[float, float]] = [
     (37.3361663, -121.890591),  # San Jose
     (40.7128,    -74.0060),     # New York
@@ -35,9 +34,7 @@ with DAG(
     tags=["weather"],
 ) as dag:
 
-    # ------------------------------------------------------------------#
-    # EXTRACT
-    # ------------------------------------------------------------------#
+    # Extract task
     @task()
     def extract_task(coord_list: List[Tuple[float, float]]) -> List[Dict[str, Any]]:
         api_key = Variable.get("open_weather_api_key")     # pulled at runtime
@@ -48,16 +45,12 @@ with DAG(
             max_workers=5,
         )
 
-    # ------------------------------------------------------------------#
-    # TRANSFORM
-    # ------------------------------------------------------------------#
+    # Transform task
     @task()
     def transform_task(raw_payloads: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return transform_weather_data(raw_payloads)
 
-    # ------------------------------------------------------------------#
-    # LOAD
-    # ------------------------------------------------------------------#
+    # Load task
     @task()
     def load_task(rows: List[Dict[str, Any]]):
         """
@@ -66,4 +59,5 @@ with DAG(
         """
         load_weather(rows, table="daily_weather", pg_conn_id="weather_pg")
 
+    # DAG: extract_task(coords) --> transform_task --> load_task
     load_task(transform_task(extract_task(coords)))
