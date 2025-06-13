@@ -3,6 +3,8 @@
 Pull current-conditions data from **OpenWeatherMap**, tidy it with **pandas**, and load it into **PostgreSQL** on an hourly schedule.  
 The pipeline is orchestrated by **Apache Airflow** and ships with a one-command Docker Compose stack for local runs.
 
+---
+
 ## Prerequisites
 
 | Tool | Why you need it | Minimum version |
@@ -63,6 +65,7 @@ open http://localhost:5432    # pg_default_email: <your-default-email> / pg_defa
 
 7. Flip the “weather_etl_pipeline” DAG switch to **On**
 
+---
 
 ## Docker Cheatsheet
 
