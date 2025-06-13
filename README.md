@@ -39,7 +39,7 @@ curl -LfO 'https://airflow.apache.org/docs/apache-airflow/3.0.2/docker-compose.y
 ## Configure
 1. Provide your API Key
 ```bash
-echo "API_KEY=<your-openweather-api-key>" > .env          # used by extract.py
+echo "API_KEY=<your-openweather-api-key>" > .env          
 ```
 
 2. Configure `docker-compose.yaml` & `.env` (credentials, usernames, passwords, ports, volumes)
@@ -51,14 +51,14 @@ echo -e ".env\ndocker-compose.yaml\n" >> .gitignore
 
 4. Spin-up stack
 ```bash
-docker compose up -d          # brings up airflow-{web, scheduler, worker}, postgres, pgadmin
-docker compose ps             # view stack details
+docker compose up -d          
+docker compose ps             
 ```
 
 5. Log in to Airflow & Postgres GUI
 ```bash
-open http://localhost:8080    # user: airflow / pw: airflow  (default)
-open http://localhost:5432    # pg_default_email: <your-default-email> / pg_default_pw: <your-default-pw>
+open http://localhost:8080    
+open http://localhost:5432    
 ```
 
 6. Add Airflow Variables & Connections 
