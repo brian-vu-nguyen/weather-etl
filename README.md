@@ -27,8 +27,8 @@ git clone https://github.com/brian-vu-nguyen/weather-etl.git
 cd weather-etl
 ```
 
-3. Copy docker-compose.yaml.example
-> Remove .example
+3. Copy `docker-compose.yaml.example`
+> Remove `.example`
 
 *OR* start from scratch:
 ``` bash
@@ -42,9 +42,9 @@ curl -LfO 'https://airflow.apache.org/docs/apache-airflow/3.0.2/docker-compose.y
 echo "API_KEY=<your-openweather-api-key>" > .env          # used by extract.py
 ```
 
-2. Configure docker-compose.yaml & .env (credentials, usernames, passwords, ports, volumes)
+2. Configure `docker-compose.yaml` & `.env` (credentials, usernames, passwords, ports, volumes)
 
-3. Add files to .gitignore (create file if it doesn't exist)
+3. Add files to `.gitignore` (create file if it doesn't exist)
 ```bash
 echo -e ".env\ndocker-compose.yaml\n" >> .gitignore
 ```
