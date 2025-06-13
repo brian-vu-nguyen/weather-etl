@@ -6,7 +6,7 @@ The pipeline is orchestrated by **Apache Airflow** and ships with a one-command 
 
 ## Installation & Setup
 
-Quick-start (local)\
+Quick-start (local)
 > **Prereqs :** Docker ≥ 20 .x and Docker Compose v2, plus an OpenWeatherMap API key from https://openweathermap.org/
 
 Clone the repository and cd into root folder
@@ -14,33 +14,33 @@ Clone the repository and cd into root folder
 git clone https://github.com/brian-vu-nguyen/weather-etl.git
 cd weather-etl
 ```
-
+\
 Provide your API Key
 ```bash
 echo "API_KEY=<your-openweather-api-key>" > .env          # used by extract.py
 ```
-
+\
 Setup docker their 'Get Started' guide
-
+\
 Configure docker-compose.yaml.example (copy and remove .example)\
    or start from scratch with below:
 ``` bash
 curl -LfO 'https://airflow.apache.org/docs/apache-airflow/3.0.2/docker-compose.yaml' 
 ```
-
+\
 Configure .env (credentials, usernames, passwords, ports, volumes)
 - See '.env.example'
-
+\
 Spin-up stack
 ```bash
 docker compose up -d          # brings up airflow-{web, scheduler, worker}, postgres, pgadmin
 docker compose ps             # view stack details
 ```
-
+\
 Log in to Airflow & Postgres GUI
 open http://localhost:8080    # user: airflow / pw: airflow  (default)
 open http://localhost:5432    # pg_default_email: <your-default-email> / pg_default_pw: <your-default-pw>
-
+\
 Flip the “weather_etl_pipeline” DAG switch to **On**
 
 
