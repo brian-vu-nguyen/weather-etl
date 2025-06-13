@@ -20,7 +20,7 @@ Provide your API Key
 echo "API_KEY=<your-openweather-api-key>" > .env          # used by extract.py
 ```
 \
-Setup docker their 'Get Started' guide
+Setup docker their 'Get Started' guide  
 \
 Configure docker-compose.yaml.example (copy and remove .example)\
    or start from scratch with below:
@@ -29,7 +29,7 @@ curl -LfO 'https://airflow.apache.org/docs/apache-airflow/3.0.2/docker-compose.y
 ```
 \
 Configure .env (credentials, usernames, passwords, ports, volumes)
-- See '.env.example'
+- See '.env.example'  
 \
 Spin-up stack
 ```bash
