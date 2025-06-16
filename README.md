@@ -1,7 +1,10 @@
 # ETL Project
 
 Pull current-conditions data from **OpenWeatherMap**, tidy it with **pandas**, and load it into **PostgreSQL** on an hourly schedule.  
+
 The pipeline is orchestrated by **Apache Airflow** and ships with a one-command Docker Compose stack for local runs.
+
+A **Slack** connection is established to receive notifications when DAGs fail.
 
 ---
 
