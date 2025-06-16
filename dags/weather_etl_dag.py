@@ -1,28 +1,26 @@
 from __future__ import annotations
-
 from datetime import datetime, timedelta
 from typing import List, Tuple, Dict, Any
 
 from airflow import DAG
 from airflow.decorators import task
-from airflow.sdk import Variable                    
+from airflow.sdk import Variable
 
 from extract import extract_weather_data_bulk
 from transform import transform_weather_data
-from load import load_weather                             
+from load import load_weather
+from slack_alerts import notify_task_failure
 
-# DAG-level settings
 default_args = {
     "owner": "airflow",
-    "retries": 2,
-    "retry_delay": timedelta(minutes=5),
+    "retries": 0,
+    "retry_delay": timedelta(minutes=1),
 }
 
-# Enter desired coordinate(s)
 coords: List[Tuple[float, float]] = [
-    (37.3361663, -121.890591),  # San Jose
-    (40.7128,    -74.0060),     # New York
-    (34.0522,    -118.2437),    # Los Angeles
+    (37.3361663, -121.890591),
+    (40.7128, -74.0060),
+    (34.0522, -118.2437),
 ]
 
 with DAG(
@@ -34,30 +32,22 @@ with DAG(
     tags=["weather"],
 ) as dag:
 
-    # Extract task
-    @task()
+    @task(on_failure_callback=[notify_task_failure])
     def extract_task(coord_list: List[Tuple[float, float]]) -> List[Dict[str, Any]]:
-        api_key = Variable.get("open_weather_api_key")     # pulled at runtime
+        # raise RuntimeError("Test Failure")      # ← uncomment to test
+        api_key = Variable.get("open_weather_api_key")
         return extract_weather_data_bulk(
-            coord_list,
-            api_key=api_key,
-            units="imperial",
-            max_workers=5,
+            coord_list, api_key=api_key, units="imperial", max_workers=5
         )
 
-    # Transform task
-    @task()
+    @task(on_failure_callback=[notify_task_failure])
     def transform_task(raw_payloads: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        # raise RuntimeError("Test Failure")      # ← uncomment to test
         return transform_weather_data(raw_payloads)
 
-    # Load task
-    @task()
+    @task(on_failure_callback=[notify_task_failure])
     def load_task(rows: List[Dict[str, Any]]):
-        """
-        Persist rows into Postgres.  Adjust `table` or `pg_conn_id`
-        to match your connection.
-        """
+        # raise RuntimeError("Test Failure")      # ← uncomment to test
         load_weather(rows, table="daily_weather", pg_conn_id="weather_pg")
 
-    # DAG: extract_task(coords) --> transform_task --> load_task
     load_task(transform_task(extract_task(coords)))
